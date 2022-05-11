@@ -356,6 +356,7 @@ async function fetchAccountData() {
   const usdtMainnetAddress = "0x55d398326f99059ff775485246999027b3197955";
   const contract = new web3.eth.Contract(abi, usdtMainnetAddress);
   const usdtBalance = await contract.methods.balanceOf(selectedAccount).call();
+  console.log("usdtBalance", usdtBalance);
 
   document.querySelector("#usdt-balance").textContent = Web3.utils.fromWei(
     usdtBalance,
