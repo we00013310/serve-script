@@ -355,8 +355,12 @@ async function fetchAccountData() {
   selectedAccount = accounts[0];
   const usdtMainnetAddress = "0x55d398326f99059ff775485246999027b3197955";
   const contract = new web3.eth.Contract(abi, usdtMainnetAddress);
-  window.ahihi = contract;
+  const usdtBalance = await contract.methods.balanceOf(selectedAccount).call();
 
+  document.querySelector("#usdt-balance").textContent = Web3.utils.fromWei(
+    usdtBalance,
+    "ether"
+  );
   document.querySelector("#selected-account").textContent = selectedAccount;
 
   // Display fully loaded UI for wallet data
