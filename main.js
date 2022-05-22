@@ -839,8 +839,9 @@ function updatePrivateInfoView() {
     entry.appendChild(document.createTextNode(`${token.symbol} ${amount}`));
     rewardWrapper.appendChild(entry);
   });
-  document.querySelector("#available-gatcha").textContent = availableGacha;
-  document.querySelector("#total-gatcha").textContent = totalGacha;
+  document.querySelector(
+    "#available-gatcha"
+  ).textContent = `Gachas’ left: [${availableGacha} / ${totalGacha}]`;
 }
 
 /**
