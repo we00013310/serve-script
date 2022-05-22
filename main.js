@@ -805,12 +805,22 @@ async function fetchAccountData() {
   };
 
   const onApprove = async () => {
-    const res = await mgkTokenContract.methods
-      .approve(currentConfigs.gatchaAddress, "9999999999999999999999999999999")
-      .send({ from: selectedAccount });
+    try {
+      setLoadingTx(true);
+      const res = await mgkTokenContract.methods
+        .approve(
+          currentConfigs.gatchaAddress,
+          "9999999999999999999999999999999"
+        )
+        .send({ from: selectedAccount });
 
-    document.querySelector("#gacha-buy-buttons").style.display = "grid";
-    document.querySelector("#btn-approve").style.display = "none";
+      document.querySelector("#gacha-buy-buttons").style.display = "grid";
+      document.querySelector("#btn-approve").style.display = "none";
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingTx(false);
+    }
   };
 
   document.querySelector("#btn-approve").addEventListener("click", onApprove);
