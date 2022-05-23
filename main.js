@@ -616,6 +616,8 @@ let rewardTypes = [];
 let rewardTokensAddress = [];
 let totalGacha = 0;
 let availableGacha = 0;
+let rewardsAvailable = {}; // key by token address
+let rewardsTotal = {}; // key by token address
 let tokens = [];
 let gatchaContract;
 
@@ -657,6 +659,9 @@ async function fetchPublicInfo(isPrivate) {
   availableGacha = 0;
   rewardTypes = [];
   tokens = [];
+  rewardsAvailable = {};
+  rewardsTotal = {};
+
   for (let i = 0; i < numberOfRewardTypes; i++) {
     const rewardType = await gatchaContract.methods.prizeRefs(i).call();
     rewardTypes.push(rewardType);
@@ -664,6 +669,8 @@ async function fetchPublicInfo(isPrivate) {
     availableGacha += +rewardType.available;
     if (!rewardTokensAddress.includes(rewardType.token)) {
       rewardTokensAddress.push(rewardType.token);
+      rewardsAvailable[rewardType.token] = 0;
+      rewardsTotal[rewardType.token] = 0;
     }
   }
   tokens = await Promise.all(
@@ -680,6 +687,16 @@ async function fetchPublicInfo(isPrivate) {
       };
     })
   );
+  rewardTypes.forEach((o) => {
+    const token = tokens.find(
+      (i) => i.address?.toLowerCase() === o.token?.toLowerCase()
+    );
+    const amount = new BigNumber(o.amount)
+      .div(new BigNumber(10).pow(token.decimals))
+      .toNumber();
+    rewardsAvailable[o.token] += amount * parseInt(o.available);
+    rewardsTotal[o.token] += amount * parseInt(o.totalNumber);
+  });
   updatePublicInfoView();
   if (isPrivate) {
     updatePrivateInfoView();
@@ -764,6 +781,8 @@ async function fetchAccountData() {
   if (!new BigNumber(allowance).isEqualTo(0)) {
     document.querySelector("#gacha-buy-buttons").style.display = "grid";
     document.querySelector("#btn-approve").style.display = "none";
+  } else {
+    document.querySelector("#btn-approve").style.display = "inline-block";
   }
 
   const onBuy = (number) => async () => {
@@ -849,9 +868,15 @@ function updatePrivateInfoView() {
     entry.appendChild(document.createTextNode(`${token.symbol} ${amount}`));
     rewardWrapper.appendChild(entry);
   });
-  document.querySelector(
-    "#available-gatcha"
-  ).textContent = `Gachas’ left: [${availableGacha} / ${totalGacha}]`;
+  document.querySelector("#available-gatcha").textContent =
+    `Gachas’ left: [${availableGacha} / ${totalGacha}] | ` +
+    tokens
+      .map((o) => {
+        return `${o.symbol}: ${rewardsAvailable[o.address]}/${
+          rewardsTotal[o.address]
+        }`;
+      })
+      .join(" | ");
 }
 
 /**
