@@ -586,7 +586,7 @@ const configs = {
   testnet: {
     rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/",
     chainId: 97,
-    gatchaAddress: "0xd8cce39be1a3fb15c648dbf13ba4c47b77e1d873",
+    gatchaAddress: "0x287bef2f7cb5c04a750ec70de7ee074895f5bff9",
     mgkAddress: "0xa1daa25016d83895f215ee724c78fcc1085accb2",
     mgkDecimals: 18,
   },
