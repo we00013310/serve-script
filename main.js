@@ -315,7 +315,7 @@ const gatchaAbi = [
         type: "uint8",
       },
     ],
-    name: "BuyGatcha",
+    name: "BuyGacha",
     type: "event",
   },
   {
@@ -375,22 +375,15 @@ const gatchaAbi = [
   },
   {
     inputs: [{ internalType: "uint256", name: "_number", type: "uint256" }],
-    name: "batchBuyGatcha",
+    name: "batchBuyGacha",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "nonpayable",
     type: "function",
   },
   {
     inputs: [],
-    name: "buyGatcha",
+    name: "buyGacha",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "collectReward",
-    outputs: [],
     stateMutability: "nonpayable",
     type: "function",
   },
@@ -531,17 +524,7 @@ const gatchaAbi = [
   },
   {
     inputs: [],
-    name: "viewAvailableGatchaNumber",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "_user", type: "address" },
-      { internalType: "contract IBEP20", name: "_token", type: "address" },
-    ],
-    name: "viewUserCollectedAmount",
+    name: "viewAvailableGachaNumber",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -730,29 +713,60 @@ function setLoadingTx(val) {
   }
 }
 
-function showGachaResult(reward) {
+function showGachaResult(reward, type) {
+  let winModalId;
+  let winModalBtnId;
+  let checkPriceId;
+  switch (type) {
+    case "x5":
+      winModalId = "#gacha-win-modal-x5";
+      winModalBtnId = "#open-gacha-button-x5";
+      checkPriceId = "#gacha-check-prize-modal-x5";
+      break;
+    case "x10":
+      winModalId = "#gacha-win-modal-x10";
+      winModalBtnId = "#open-gacha-button-x10";
+      checkPriceId = "#gacha-check-prize-modal-x10";
+      break;
+    default:
+      winModalId = "#gacha-win-modal";
+      winModalBtnId = "#open-gacha-button";
+      checkPriceId = "#gacha-check-prize-modal";
+      break;
+  }
   document.querySelector(".modal-wrapper").style.display = "flex";
   document.querySelector(".gacha-animation").style.display = "block";
   document.querySelector(".gacha-check-prize-modal").style.display = "none";
   setTimeout(() => {
     document.querySelector(".gacha-animation").style.display = "none";
-    document.querySelector(".gacha-win-modal").style.display = "block";
+    document.querySelector(winModalId).style.display = "block";
 
     const gatchaOpenResult = () => {
-      document.querySelector(".gacha-win-modal").style.display = "none";
+      document.querySelector(winModalId).style.display = "none";
       document.querySelector(".gacha-open-animation").style.display = "block";
       setTimeout(() => {
         document.querySelector(".gacha-open-animation").style.display = "none";
-        document.querySelector(".gacha-check-prize-modal").style.display =
-          "block";
-        document.querySelector("#price-value").textContent = `x ${reward}`;
+        document.querySelector(checkPriceId).style.display = "block";
+        const listElements = document.querySelectorAll(
+          `${checkPriceId} #price-value`
+        );
+        listElements.forEach((o, i) => {
+          o.textContent = `x ${reward?.length ? reward[i] : reward}`;
+        });
+
+        document
+          .querySelector(`${checkPriceId} .close-check-prize-button`)
+          .addEventListener("click", () => {
+            document.querySelector(`${checkPriceId}`).style.display = "none";
+            document.querySelector(".modal-wrapper").style.display = "none";
+          });
       }, 3000);
     };
 
-    let tmp = document.querySelector(".open-gacha-button");
+    let tmp = document.querySelector(winModalBtnId);
     tmp.replaceWith(tmp.cloneNode(true));
     document
-      .querySelector(".open-gacha-button")
+      .querySelector(winModalBtnId)
       .addEventListener("click", gatchaOpenResult);
   }, 3000);
 }
@@ -789,11 +803,11 @@ async function fetchAccountData() {
   }
 
   const onBuy = (number) => async () => {
+    const writableGatchaContract = new web3.eth.Contract(
+      gatchaAbi,
+      currentConfigs.gatchaAddress
+    );
     if (number === 1) {
-      const writableGatchaContract = new web3.eth.Contract(
-        gatchaAbi,
-        currentConfigs.gatchaAddress
-      );
       // set loading
       document.querySelectorAll(".gacha-buy-button").forEach((o) => {
         o.setAttribute("disabled", true);
@@ -801,22 +815,52 @@ async function fetchAccountData() {
       try {
         setLoadingTx(true);
         const res = await writableGatchaContract.methods
-          .buyGatcha()
+          .buyGacha()
           .send({ from: selectedAccount });
         console.log("bought", res);
         document.querySelectorAll(".gacha-buy-button").forEach((o) => {
           o.setAttribute("disabled", false);
         });
-        let prize = res.events.BuyGatcha.returnValues.amount;
+        let prize = res.events.BuyGacha.returnValues.amount;
         const tokenPrice = tokens.find(
           (o) =>
             o.address.toLowerCase() ===
-            res.events.BuyGatcha.returnValues.token.toLowerCase()
+            res.events.BuyGacha.returnValues.token.toLowerCase()
         );
         prize = new BigNumber(prize).div(
           new BigNumber(10).pow(tokenPrice.decimals)
         );
         showGachaResult(prize);
+        fetchPublicInfo(true);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingTx(false);
+      }
+    } else {
+      // set loading
+      document.querySelectorAll(".gacha-buy-button").forEach((o) => {
+        o.setAttribute("disabled", true);
+      });
+      try {
+        setLoadingTx(true);
+        const res = await writableGatchaContract.methods
+          .batchBuyGacha(number)
+          .send({ from: selectedAccount });
+        console.log("bought", number, res);
+        document.querySelectorAll(".gacha-buy-button").forEach((o) => {
+          o.setAttribute("disabled", false);
+        });
+        let prizes = res.events.BuyGacha.map((o) => {
+          const tokenPrize = tokens.find(
+            (i) =>
+              i.address.toLowerCase() === o.returnValues.token.toLowerCase()
+          );
+          return new BigNumber(o.returnValues.amount).div(
+            new BigNumber(10).pow(tokenPrize.decimals)
+          );
+        });
+        showGachaResult(prizes, `x${number}`);
         fetchPublicInfo(true);
       } catch (err) {
         console.error(err);
@@ -851,8 +895,10 @@ async function fetchAccountData() {
   document.querySelector("#btn-buy-1").addEventListener("click", onBuy(1));
   tmp = document.querySelector("#btn-buy-5");
   tmp.replaceWith(tmp.cloneNode(true));
+  document.querySelector("#btn-buy-5").addEventListener("click", onBuy(5));
   tmp = document.querySelector("#btn-buy-10");
   tmp.replaceWith(tmp.cloneNode(true));
+  document.querySelector("#btn-buy-10").addEventListener("click", onBuy(10));
   document.querySelector(
     "#your-wallet"
   ).textContent = `Your Wallet: ${selectedAccount}`;
