@@ -679,6 +679,7 @@ async function fetchPublicInfo(isPrivate) {
       const symbol = await tokenContract.methods.symbol().call();
       const decimals = await tokenContract.methods.decimals().call();
       const name = await tokenContract.methods.name().call();
+
       return {
         name,
         address: o,
@@ -687,6 +688,7 @@ async function fetchPublicInfo(isPrivate) {
       };
     })
   );
+
   rewardTypes.forEach((o) => {
     const token = tokens.find(
       (i) => i.address?.toLowerCase() === o.token?.toLowerCase()
@@ -697,6 +699,7 @@ async function fetchPublicInfo(isPrivate) {
     rewardsAvailable[o.token] += amount * parseInt(o.available);
     rewardsTotal[o.token] += amount * parseInt(o.totalNumber);
   });
+
   updatePublicInfoView();
   if (isPrivate) {
     updatePrivateInfoView();
@@ -708,7 +711,7 @@ function updatePublicInfoView() {
   rewardWrapper.innerHTML = "";
 
   rewardTypes.forEach((o) => {
-    const token = tokens.find((tok) => (tok.address = o.token));
+    const token = tokens.find((tok) => tok.address === o.token);
     const amount = new BigNumber(o.amount).div(
       new BigNumber(10).pow(token.decimals)
     );
