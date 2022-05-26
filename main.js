@@ -781,6 +781,23 @@ async function fetchAccountData() {
   const chainId = await web3.eth.getChainId();
   // Load chain information over an HTTP API
   const chainData = evmChains.getChain(chainId);
+
+  if (chainData.chainId !== currentConfigs.chainId) {
+    document.querySelector(".modal-wrapper").style.display = "flex";
+    document.querySelector("#network-changer").style.display = "block";
+    document
+      .querySelector("#switch-network-button")
+      .addEventListener("click", async () => {
+        await ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: `0x${currentConfigs.chainId.toString(16)}` }],
+        });
+        document.querySelector("#network-changer").style.display = "none";
+        document.querySelector(".modal-wrapper").style.display = "none";
+        fetchAccountData();
+      });
+    return null;
+  }
   // document.querySelector("#network-name").textContent = chainData.name;
 
   // Get list of accounts of the connected wallet
